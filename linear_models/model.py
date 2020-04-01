@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class LinearRegression:
 
     def __init__(self, fit_bias=True):
@@ -8,7 +7,6 @@ class LinearRegression:
         self.fit_bias = fit_bias
 
     def fit_affine_proj(self, X, y):
-
         """
         fit the regression with MLE
         :param X:  nd array with shape NxM, N samples of M dim features
@@ -23,7 +21,6 @@ class LinearRegression:
         self.beta = np.dot(inverse, y)
 
     def fit_sgd(self, X, y, lr, iter):
-
         samples, features = X.shape  # []
         self.beta = np.zeros(shape=(features,))
         self.bias = 0
@@ -40,7 +37,7 @@ class LinearRegression:
             costs.append(cost)
 
             # if i % 100 == 0:
-            print ("Cost at iteration %d: %f" % (i, cost))
+            print("Cost at iteration %d: %f" % (i, cost))
 
             # step 3: compute gradients
             dJ_dw = (2.0 / samples) * np.dot(X.T, (y_predict - y))
@@ -52,11 +49,8 @@ class LinearRegression:
 
         return self.beta, costs
 
-
     def predict(self, X):
-
         # if self.fit_bias:
         #     X = np.c_[np.ones(X.shape[0]), X]
 
         return np.dot(X, self.beta)
-

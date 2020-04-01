@@ -3,7 +3,6 @@ from linear_models import model
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 
-import matplotlib
 import matplotlib.pyplot as plt
 
 
@@ -13,30 +12,29 @@ def generate_regression_data(n_samples,
                              bias,
                              noise_std=1,
                              seed=0):
-
     X, y, coef = make_regression(n_samples=n_samples,
-                                  n_features=n_features,
-                                  n_targets=n_targets,
-                                  bias=bias,
-                                  noise=noise_std,
-                                  coef=True,
-                                  random_state=seed)
+                                 n_features=n_features,
+                                 n_targets=n_targets,
+                                 bias=bias,
+                                 noise=noise_std,
+                                 coef=True,
+                                 random_state=seed)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=seed)
 
-    return X_train, X_test, y_train, y_test , coef
+    return X_train, X_test, y_train, y_test, coef
 
 
 def process_LinearRegression():
     np.random.seed(12345)
 
     std = np.random.randint(0, 1000)
-    intercept = np.random.rand()* np.random.randint(-300, 300)
-    X_train, X_test, y_train, y_test , coef = generate_regression_data(50, 1, 1, intercept, std, 0)
+    intercept = np.random.rand() * np.random.randint(-300, 300)
+    X_train, X_test, y_train, y_test, coef = generate_regression_data(50, 1, 1, intercept, std, 0)
 
     LR1 = model.LinearRegression(fit_bias=True)
     LR1.fit_affine_proj(X_train, y_train)
-    y_pred1= LR1.predict(X_test)
+    y_pred1 = LR1.predict(X_test)
     loss = np.mean((y_test - y_pred1) ** 2)
     print(loss)
 
@@ -59,7 +57,6 @@ def process_LinearRegression():
     plt.scatter(X_test, y_test, alpha=0.5)
     plt.plot(X_plot, y2_plot, 'g')
     plt.show()
-
 
 
 def main():
