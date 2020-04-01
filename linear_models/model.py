@@ -13,23 +13,27 @@ class LinearRegression:
         :param y: nd array with shape NxK, N samples of K dim labels
         :return:
         """
-        #
-        # if self.fit_bias:
-        #     X = np.c_[np.ones(X.shape[0]), X]
 
         inverse = np.dot(np.linalg.inv(np.dot(X.T, X)), X.T)
         self.beta = np.dot(inverse, y)
 
     def fit_sgd(self, X, y, lr, iter):
+        """
+        Fit the regression with stochastic gradient descent
+        :param X: same as above
+        :param y: same as above
+        :param lr: sgd learning rate
+        :param iter: iteration before converge
+        :return:
+        """
+
         samples, features = X.shape  # []
         self.beta = np.zeros(shape=(features,))
         self.bias = 0
         costs = []
-        # print self.weights
 
         for i in range(iter):
             # step 1: compute y_predict
-
             y_predict = np.dot(X, self.beta)
 
             # step 2:calculate cost function
@@ -50,7 +54,5 @@ class LinearRegression:
         return self.beta, costs
 
     def predict(self, X):
-        # if self.fit_bias:
-        #     X = np.c_[np.ones(X.shape[0]), X]
 
         return np.dot(X, self.beta)
