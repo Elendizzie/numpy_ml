@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class LinearRegression:
 
     def __init__(self, fit_bias=True):
@@ -60,6 +59,13 @@ class LinearRegression:
 
 class LogisticRegression:
     def __init__(self, reg='l2', gamma=0):
+        """
+        A simple logistic regression fit with sgd with regularization
+        :param reg: l1 or l2 regularization
+        :param gamma: float in [0, 1], larger values indicate larger penalties,
+        and 0 indicates no penalty
+        """
+
         error_msg = "Reg type must be 'l1' or 'l2', but instead got: {}".format(reg)
         assert reg in ['l1', 'l2'], error_msg
 
@@ -94,7 +100,7 @@ class LogisticRegression:
         """
         N, M = X.shape
 
-        return np.dot(y - y_pred, X) / N
+        return -np.dot(y - y_pred, X) / N
 
     def fit_sgd(self, X, y, thresh=1e-7, lr=1e-2, iters=100):
         """
@@ -112,6 +118,9 @@ class LogisticRegression:
         for iter in range(iters):
             y_pred = self.sigmoid(np.dot(X, self.beta))
             loss = self.loss_penalty(X, y, y_pred)
+
+            print("Cost at iteration %d: %f" % (iter, loss))
+
             if loss_prev - loss < thresh:
                 return
             loss_prev = loss
