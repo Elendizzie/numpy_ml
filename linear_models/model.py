@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class LinearRegression:
 
     def __init__(self, fit_bias=True):
@@ -54,5 +55,71 @@ class LinearRegression:
         return self.beta, costs
 
     def predict(self, X):
-
         return np.dot(X, self.beta)
+
+
+class LogisticRegression:
+    def __init__(self, reg='l2', gamma=0):
+        error_msg = "Reg type must be 'l1' or 'l2', but instead got: {}".format(reg)
+        assert reg in ['l1', 'l2'], error_msg
+
+        self.reg = reg
+        self.gamma = gamma
+        self.beta = None
+
+    def loss_penalty(self, X, y, y_pred):
+        """
+        Implement cross-entropy loss and L1/L2 regularization
+        :param X:
+        :param y:
+        :param y_pred:
+        :return:
+        """
+        N, M = X.shape
+        order = 2 if self.reg == 'l2' else 1
+
+        ce_loss = -np.log(y_pred[y == 1]).sum() - np.log(y_pred[y == 1]).sum()
+        penalty = 0.5 * self.gamma * np.linalg.norm(self.beta, ord=order) ** 2
+
+        return ce_loss + penalty / N
+
+    def param_update(self, X, y, y_pred):
+
+        """
+        Calculate the gradient of loss_penalty function
+        :param X:
+        :param y:
+        :param y_pred:
+        :return:
+        """
+        N, M = X.shape
+
+        return np.dot(y - y_pred, X) / N
+
+    def fit_sgd(self, X, y, thresh=1e-7, lr=1e-2, iters=100):
+        """
+        train with gradient descent
+        :param X: ndarray of NXM, N samples, M dimenstions
+        :param y: ndarray of Nx1, N labels
+        :param lr: learning rate for sgd
+        :param iters: maximum num of iteration before converge
+        :return:
+        """
+
+        loss_prev = np.inf
+        self.beta = np.random.rand(X.shape[1])
+
+        for iter in range(iters):
+            y_pred = self.sigmoid(np.dot(X, self.beta))
+            loss = self.loss_penalty(X, y, y_pred)
+            if loss_prev - loss < thresh:
+                return
+            loss_prev = loss
+
+            self.beta -= lr * self.param_update(X, y, y_pred)
+
+    def predict(self, X):
+        return self.sigmoid(np.dot(X, self.beta))
+
+    def sigmoid(self, a):
+        return 1 / (1 + np.exp(-a))
