@@ -39,8 +39,9 @@ class DecisionTree:
         """
 
         best_gain = - np.inf
-        split_idx, thresh_idx = None, None
+        split_idx, split_thresh = None, None
 
+        # go through each feature, find the best idx to maximize the gain
         for i in feat_idx:
             feat_vals = X[:, i]
             levels = np.unique(feat_vals)
@@ -53,7 +54,7 @@ class DecisionTree:
                 best_gain = gains.max()
                 split_thresh = thresh[gains.argmax()]
 
-        return split_idx, thresh_idx
+        return split_idx, split_thresh
 
     def impurity_gain(self, Y, split_thresh, feat_vals):
         """
@@ -74,6 +75,27 @@ class DecisionTree:
         elif self.criterion == "mse":
             loss = self.mse
 
+        #generate split
+
+        left = np.argwhere(feat_vals <= split_thresh).flatten()
+        right = np.argwhere(feat_vals > split_thresh).flatten()
+
+        if len(left) == 0 or len(right) == 0:
+            return 0
+
+        # compute the cost for each step
+        parent_loss = loss(Y)
+
+        n = len(Y)
+        n_left = len(left)
+        n_right = len(right)
+
+        child_loss = (n_left / n) * loss(Y[left]) + (n_right / n) * loss(Y[right])
+
+        impurity_gain = parent_loss - child_loss
+
+        return impurity_gain
+
     def fit(self, X, Y):
         """
         Fit the BST to a dataset
@@ -87,7 +109,31 @@ class DecisionTree:
 
         self.root = self.grow_tree(X, Y)
 
+    def predict(self, X):
+
+        """
+        Predict use trained bst
+        :param X: ndarray of shape NxM,
+        :return: a prediction array of shape (N,)
+        """
+
+        return np.array([self.tree_traverse(x, self.root) for x in X])
+
+
     def grow_tree(self, X, Y, cur_depth=0):
+
+        # if all labels are the same, return a leaf
+        if len(set(Y)) == 1:
+            if self.classifier:
+                prob = np.zeros(self.num_classes)
+                prob[Y[0]] = 1.0
+            return Leaf(prob) if self.classifier else Leaf(Y[0])
+
+        if cur_depth >= self.max_depth:
+            v = np.mean(Y, axis=0)
+            if self.classifier:
+                v = np.bincount(Y, minlength=self.num_classes) / len(Y)
+            return Leaf(v)
 
         cur_depth += 1
         self.depth = max(self.depth, cur_depth)
@@ -104,7 +150,7 @@ class DecisionTree:
         left = self.grow_tree(X[l, :], Y[l], cur_depth)
         right = self.grow_tree(X[r, :], Y[r], cur_depth)
 
-        return Node(left, right, feat, thresh)
+        return Node(left, right, (feat, thresh))
 
     def tree_traverse(self, X, node, prob=False):
         if isinstance(node, Leaf):
@@ -112,8 +158,8 @@ class DecisionTree:
                 return node.value if prob else node.value.argmax()
             return node.value
         if X[node.feature] <= node.threshold:
-            return self._traverse(X, node.left, prob)
-        return self._traverse(X, node.right, prob)
+            return self.tree_traverse(X, node.left, prob)
+        return self.tree_traverse(X, node.right, prob)
 
     def mse(self, y):
 
@@ -141,11 +187,11 @@ class DecisionTree:
 
 
 class Node:
-    def __init__(self, left, right, feat, thresh):
+    def __init__(self, left, right, params):
         self.left = left
         self.right = right
-        self.feature = feat
-        self.threshold = thresh
+        self.feature = params[0]
+        self.threshold = params[1]
 
 
 class Leaf:
