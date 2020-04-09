@@ -2,6 +2,6 @@
 
 Check the following notebooks for math formulas and explains. 
 
-Decisioni Trees for classification and regression using CART algorithm.
-  - [Linear Regression](linear_regression.ipynb)
+Decision Trees for classification and regression using CART algorithm.
+  - [Decision Tree for Classificaton/Regression](decision_trees.ipynb)
   

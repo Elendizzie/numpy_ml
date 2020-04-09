@@ -8,31 +8,41 @@ from sklearn.metrics import accuracy_score, mean_squared_error
 
 import matplotlib.pyplot as plt
 
+
 def process_decision_tree():
     n_samples = 100
     n_feats = 7
     max_depth = 5
 
-    # classifier = np.random.choice([True, False])
-    # if classifier:
-    # create classification problem
+    classifier = True
 
-    n_classes = 3
-    X, Y = make_blobs(n_samples=n_samples, centers=n_classes, n_features=n_feats)
+    if classifier:
 
-    # plt.scatter(X[:, 0], Y)
-    # plt.show()
+        n_classes = 5
+        X, Y = make_blobs(n_samples=n_samples, centers=n_classes, n_features=n_feats)
 
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3)
+        plt.scatter(X[:, 0], Y)
+        plt.show()
 
-    # initialize model
-    def loss(yp, y):
-        return 1 - accuracy_score(yp, y)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3)
 
-    criterion = np.random.choice(["entropy", "gini"])
-    DT1 = model.DecisionTree(classifier=True,
-                              max_depth=max_depth,
-                              criterion=criterion)
+        # initialize model
+        def loss(yp, y):
+            return 1 - accuracy_score(yp, y)
+
+        criterion = np.random.choice(["entropy", "gini"])
+
+    else:
+
+        X, Y = make_regression(n_samples=n_samples, n_features=1)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.3)
+
+        criterion = "mse"
+        loss = mean_squared_error
+
+    DT1 = model.DecisionTree(classifier=classifier,
+                             max_depth=max_depth,
+                             criterion=criterion)
 
     DT1.fit(X, Y)
 
@@ -46,18 +56,25 @@ def process_decision_tree():
     print("max_depth={}, n_feats={}, n_samples={}".format(max_depth, n_feats, n_samples))
     print("loss_train={}, loss_test={}".format(loss_train, loss_test))
 
-    X_ax = np.linspace(
-        np.min(X_test.flatten()) - 1, np.max(X_test.flatten()) + 1, 100).reshape(-1, 1)
+    if classifier:
+        for i in np.unique(Y_test):
+            plt.scatter(
+                X_test[y_pred_test == i, 1].flatten(),
+                X_test[y_pred_test == i, 2].flatten(),
+            )
+        plt.show()
+    else:
+        X_ax = np.linspace(
+            np.min(X_test.flatten()) - 1, np.max(X_test.flatten()) + 1, 100).reshape(-1, 1)
+        y_pred_test_plot = DT1.predict(X_ax)
 
-    y_pred_test_plot = DT1.predict(X_ax)
+        plt.scatter(X_test.flatten(), Y_test.flatten(), c="b", alpha=0.5)
+        plt.plot(X_ax.flatten(),
+                 y_pred_test_plot.flatten(),
+                 label="DT".format(max_depth),
+                 color="yellowgreen", )
+        plt.show()
 
-    plt.scatter(X_test.flatten(), Y_test.flatten(), c="b", alpha=0.5)
-    plt.plot( X_ax.flatten(),
-            y_pred_test_plot.flatten(),
-            #  linewidth=0.5,
-            label="DT".format(max_depth),
-            color="yellowgreen",)
-    plt.show()
 
 def main():
     process_decision_tree()
