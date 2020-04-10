@@ -3,7 +3,6 @@ from linear_models import model
 from sklearn.datasets import make_regression
 from sklearn.datasets import make_blobs
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import zero_one_loss
 
 import matplotlib.pyplot as plt
 

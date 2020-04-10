@@ -75,7 +75,7 @@ class DecisionTree:
         elif self.criterion == "mse":
             loss = self.mse
 
-        #generate split
+        # generate split
 
         left = np.argwhere(feat_vals <= split_thresh).flatten()
         right = np.argwhere(feat_vals > split_thresh).flatten()
@@ -118,7 +118,6 @@ class DecisionTree:
         """
 
         return np.array([self.tree_traverse(x, self.root) for x in X])
-
 
     def grow_tree(self, X, Y, cur_depth=0):
 
@@ -186,13 +185,92 @@ class DecisionTree:
         return 1 - sum([(i / N) ** 2 for i in hist])
 
 
+class RandomForest:
+
+    def __init__(self,
+                 n_trees,
+                 max_depth,
+                 n_feats,
+                 classifier=True,
+                 criterion="entropy"):
+
+        """
+        An ensemble of decision trees where each split is calculated using a
+        random subset of the features from the input
+
+        :param n_trees: number of decision trees to use
+        :param max_depth: the max depth where to stop growing the tree
+        :param n_feats: the number of features to sample on each split
+        :param classifier: true for classifier and false for regression
+        :param criterion: 'entropy' and 'gini' for classifier, and 'mse' for regression
+        """
+
+        self.trees = []
+        self.n_trees = n_trees
+        self.max_depth = max_depth
+        self.n_feats = n_feats
+        self.criterion = criterion
+        self.classifier = classifier
+
+    def fit(self, X, Y):
+        """
+        Create n_trees of bootstrapped samples from the training data and use each to fit a
+        separate decision tree
+
+        :param X:
+        :param Y:
+        :return:
+        """
+
+        self.trees = []
+
+        for i in range(self.n_trees):
+            X_sample, Y_sample = bootstrap_sampling(X, Y)
+            DT = DecisionTree(classifier=self.classifier,
+                              max_depth=self.max_depth,
+                              num_feats=self.n_feats,
+                              criterion=self.criterion)
+
+            DT.fit(X_sample, Y_sample)
+            self.trees.append(DT)
+
+    def vote(self, predictions):
+        """
+        return the bagging prediction across all trees
+        :param predictions: ndarray of shape (n_trees, N)
+        :return: For classifier, returns the predicted label by majority vote of all decision trees.
+        For regression, returns the average weighted output across all decision trees.
+        """
+
+        if self.classifier:
+            out = [np.bincount(pred).argmax() for pred in predictions.T]
+        else:
+            out = [np.mean(pred) for pred in predictions.T]
+
+        return np.array(out)
+
+    def predict(self, X):
+        """
+
+        :param X:
+        :return:
+        """
+        tree_prediction = np.array([[t.tree_traverse(x,t.root)for x in X] for t in self.trees])
+
+        return self.vote(tree_prediction)
+
+def bootstrap_sampling(X, Y):
+    N, M = X.shape
+    idxs = np.random.choice(N, N, replace=True)
+    return X[idxs], Y[idxs]
+
+
 class Node:
     def __init__(self, left, right, params):
         self.left = left
         self.right = right
         self.feature = params[0]
         self.threshold = params[1]
-
 
 class Leaf:
     def __init__(self, value):

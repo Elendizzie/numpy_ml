@@ -2,7 +2,7 @@
 
 ```
 ├── Linear Models
-│   └── Linear Regression
+│   └── Linear Regression     
 │   └── Logistic Regression
 │   └── Ridge Regression
 │   └── Ordinary Least Squares
