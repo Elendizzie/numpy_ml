@@ -255,14 +255,123 @@ class RandomForest:
         :param X:
         :return:
         """
-        tree_prediction = np.array([[t.tree_traverse(x,t.root)for x in X] for t in self.trees])
+        tree_prediction = np.array([[t.tree_traverse(x, t.root) for x in X] for t in self.trees])
 
         return self.vote(tree_prediction)
+
 
 def bootstrap_sampling(X, Y):
     N, M = X.shape
     idxs = np.random.choice(N, N, replace=True)
     return X[idxs], Y[idxs]
+
+
+def to_one_hot(Y, n_classes=None):
+    if Y.ndim > 1:
+        raise ValueError("Y need dimension of 1")
+
+    N = Y.size
+    n_cols = np.max(Y) + 1 if n_classes is None else n_classes
+    one_hot = np.zeros(N, n_cols)
+    one_hot[np.arange(N), Y] = 1
+
+    return one_hot
+
+
+class GradientBoostedDecisionTree:
+    def __init__(self,
+                 max_depth=None,
+                 classifier=True,
+                 lr=1e-3,
+                 n_iters=100,
+                 loss="CrossEntropy",
+                 step_size="constant"):
+        self.max_depth = max_depth
+        self.classifier = classifier
+        self.out_dims = None
+        self.weights = None
+        self.learners = None
+        self.estimator = None
+        self.lr = lr
+        self.n_iters = n_iters
+        self.loss = loss
+        self.step_size = step_size
+
+    def train_sgd(self, X, Y):
+        """
+        Train with stochastic gradient descent
+        :param X: ndarray of shape NxM, N samples and M features
+        :param Y: ndarray of shape NX1, N samples
+        :return:
+        """
+
+        if self.loss == "mse":
+            loss = MSELoss()
+        elif self.loss == "crossentropy":
+            loss = CrossEntropyLoss()
+
+        if self.classifier:
+            Y = to_one_hot(Y.flatten)
+        else:
+            Y = Y.reshape(-1, 1) if len(Y.shape) == 1 else Y
+
+        N, M = X.shape
+        self.out_dims = Y.shape[1]
+        self.learners = np.empty((self.n_iters, self.out_dims), dtype=object)
+        self.weights = np.ones((self.n_iters, self.out_dims))
+
+
+        for i in range(1, self.n_iters):
+            for k in range(self.out_dims):
+                y, y_pred = Y[:, k], y_pred[:, k]
+                neg_grad = -1 * loss.loss_derivative(y, y_pred)
+
+                t = DecisionTree(classifier=False,
+                                 max_depth=self.max_depth,
+                                 criterion="mse")
+
+                t.fit(X, neg_grad)
+                self.learners[i, k] = t
+
+                h_pred = t.predict(X)
+
+                self.weights[i, k] *= self.step_size
+                y_pred[:, k] += self.weights[i, k] * h_pred
+
+    def predict(self, X):
+        """
+
+        :param X: ndarray of shape NxM, N samples with M features
+        :return:
+        """
+
+        y_pred = np.zeros((X.shape[0], self.out_dims))
+        for i in range(self.n_iters):
+            for k in range(self.out_dims):
+                y_pred[:, k] += self.weights[i, k] * self.learners[i, k].predict(X)
+
+        if self.classifier:
+            y_pred = y_pred.argmax(axis=1)
+
+        return y_pred
+
+
+class MSELoss:
+    def __call__(self, y, y_predict):
+        return np.mean((y - y_predict) ** 2)
+
+    def loss_derivative(self, y, y_predict):
+        return - 2 / len(y) * (y - y_predict)
+
+
+class CrossEntropyLoss:
+    def __call__(self, y, y_predict):
+        eps = np.finfo(float).eps
+        return -np.sum(y * np.log(y_predict + eps))
+
+    def loss_derivative(self, y, y_predict):
+        eps = np.finfo(float).eps
+        return -y * 1 / (y_predict + eps)
 
 
 class Node:
@@ -271,6 +380,7 @@ class Node:
         self.right = right
         self.feature = params[0]
         self.threshold = params[1]
+
 
 class Leaf:
     def __init__(self, value):
